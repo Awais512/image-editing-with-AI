@@ -6,15 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -34,6 +26,7 @@ import { CustomField } from "./custom-field";
 import { AspectRatioKey, debounce, deepMergeObjects } from "@/lib/utils";
 import { updateCredits } from "@/lib/actions/user.actions";
 import MediaUploader from "./media-uploader";
+import TransformImage from "./transform-image";
 
 export const formSchema = z.object({
   title: z.string(),
@@ -228,6 +221,15 @@ const TransformationForm = ({
                 type={type}
               />
             )}
+          />
+
+          <TransformImage
+            image={image}
+            type={type}
+            title={form.getValues().title}
+            isTransforming={isTransforming}
+            setIsTransforming={setIsTransforming}
+            transformationConfig={transformationConfig}
           />
         </div>
         <div className="flex flex-col gap-4">
