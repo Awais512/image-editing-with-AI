@@ -1,12 +1,9 @@
 "use client";
-import React, { useEffect, useState, useTransition } from "react";
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -15,6 +12,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   aspectRatioOptions,
@@ -23,10 +30,11 @@ import {
   transformationTypes,
 } from "@/constants";
 import { CustomField } from "./custom-field";
+import { useEffect, useState, useTransition } from "react";
 import { AspectRatioKey, debounce, deepMergeObjects } from "@/lib/utils";
-import { updateCredits } from "@/lib/actions/user.actions";
 import MediaUploader from "./media-uploader";
-import TransformImage from "./transform-image";
+import TransformedImage from "./transform-image";
+import { updateCredits } from "@/lib/actions/user.actions";
 import { getCldImageUrl } from "next-cloudinary";
 import { addImage, updateImage } from "@/lib/actions/image.actions";
 import { useRouter } from "next/navigation";
@@ -49,16 +57,13 @@ const TransformationForm = ({
   config = null,
 }: TransformationFormProps) => {
   const transformationType = transformationTypes[type];
-
   const [image, setImage] = useState(data);
   const [newTransformation, setNewTransformation] =
     useState<Transformations | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransforming, setIsTransforming] = useState(false);
   const [transformationConfig, setTransformationConfig] = useState(config);
-
   const [isPending, startTransition] = useTransition();
-
   const router = useRouter();
 
   const initialValues =
@@ -72,11 +77,13 @@ const TransformationForm = ({
         }
       : defaultValues;
 
+  // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
   });
 
+  // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
@@ -148,12 +155,14 @@ const TransformationForm = ({
     onChangeField: (value: string) => void
   ) => {
     const imageSize = aspectRatioOptions[value as AspectRatioKey];
-    setImage((prev: any) => ({
-      ...prev,
+
+    setImage((prevState: any) => ({
+      ...prevState,
       aspectRatio: imageSize.aspectRatio,
       width: imageSize.width,
       height: imageSize.height,
     }));
+
     setNewTransformation(transformationType.config);
 
     return onChangeField(value);
@@ -166,15 +175,16 @@ const TransformationForm = ({
     onChangeField: (value: string) => void
   ) => {
     debounce(() => {
-      setNewTransformation((prev: any) => ({
-        ...prev,
+      setNewTransformation((prevState: any) => ({
+        ...prevState,
         [type]: {
-          ...prev?.[type],
+          ...prevState?.[type],
           [fieldName === "prompt" ? "prompt" : "to"]: value,
         },
       }));
-      return onChangeField(value);
-    }, 1000);
+    }, 1000)();
+
+    return onChangeField(value);
   };
 
   const onTransformHandler = async () => {
@@ -185,6 +195,7 @@ const TransformationForm = ({
     );
 
     setNewTransformation(null);
+
     startTransition(async () => {
       await updateCredits(userId, creditFee);
     });
@@ -207,6 +218,7 @@ const TransformationForm = ({
           className="w-full"
           render={({ field }) => <Input {...field} className="input-field" />}
         />
+
         {type === "fill" && (
           <CustomField
             control={form.control}
@@ -218,9 +230,10 @@ const TransformationForm = ({
                 onValueChange={(value) =>
                   onSelectFieldHandler(value, field.onChange)
                 }
+                value={field.value}
               >
                 <SelectTrigger className="select-field">
-                  <SelectValue placeholder="Select Size" />
+                  <SelectValue placeholder="Select size" />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.keys(aspectRatioOptions).map((key) => (
@@ -258,6 +271,7 @@ const TransformationForm = ({
                 />
               )}
             />
+
             {type === "recolor" && (
               <CustomField
                 control={form.control}
@@ -282,6 +296,7 @@ const TransformationForm = ({
             )}
           </div>
         )}
+
         <div className="media-uploader-field">
           <CustomField
             control={form.control}
@@ -298,7 +313,7 @@ const TransformationForm = ({
             )}
           />
 
-          <TransformImage
+          <TransformedImage
             image={image}
             type={type}
             title={form.getValues().title}
@@ -307,21 +322,22 @@ const TransformationForm = ({
             transformationConfig={transformationConfig}
           />
         </div>
+
         <div className="flex flex-col gap-4">
           <Button
-            onClick={onTransformHandler}
-            disabled={isTransforming || newTransformation === null}
-            className="submit-button capitalize"
             type="button"
+            className="submit-button capitalize"
+            disabled={isTransforming || newTransformation === null}
+            onClick={onTransformHandler}
           >
-            {isTransforming ? "Transforming" : "Apply Transformation"}
+            {isTransforming ? "Transforming..." : "Apply Transformation"}
           </Button>
           <Button
-            disabled={isSubmitting}
-            className="submit-button capitalize"
             type="submit"
+            className="submit-button capitalize"
+            disabled={isSubmitting}
           >
-            {isSubmitting ? "Submitting" : "Save Image"}
+            {isSubmitting ? "Submitting..." : "Save Image"}
           </Button>
         </div>
       </form>
